@@ -141,13 +141,21 @@ export default function BookingForm({ lots = [] }) {
                 { logger: m => console.log(m) }
             );
 
-            // Extract alphanumeric characters for a license plate
-            // Some plates might have spaces or dashes, let's keep it simple or just take the raw string
-            // actually license plates are usually alphanumeric
-            const cleanedText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+            // 1. Tesseract often reads background noise (grills, shadows, dirt) as random letters.
+            // We split the output into lines and words to search for a typical license plate format.
+            const tokens = text.toUpperCase().split(/[\s\n-]+/).map(w => w.replace(/[^A-Z0-9]/g, ''));
 
-            if (cleanedText) {
-                setFormData(prev => ({ ...prev, carNumber: cleanedText }));
+            // 2. Find a strongly plate-like word: 4 to 10 chars long, contains at least one letter and at least one number
+            let plateLike = tokens.find(w => w.length >= 4 && w.length <= 11 && /[A-Z]/.test(w) && /[0-9]/.test(w));
+
+            // 3. If no clear plate was found, fallback to scraping all alphanumeric chars.
+            let rawAlphaNum = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+
+            // 4. Limit to a max length so the input field isn't flooded with 100 characters of noise
+            let finalNumber = plateLike || (rawAlphaNum.length > 10 ? rawAlphaNum.substring(0, 10) : rawAlphaNum);
+
+            if (finalNumber) {
+                setFormData(prev => ({ ...prev, carNumber: finalNumber }));
             }
         } catch (error) {
             console.error(error);
