@@ -94,12 +94,24 @@ export async function POST(req) {
                     formattedPlan = `${data.durationValue} ${unit}${data.durationValue > 1 ? 's' : ''}`;
                 }
 
-                const messageBody = `🚗 Spot Reserved!\n\n📍 Location: ${newBooking.lot.name}\n🚙 Plate: ${data.carNumber}\n⏱️ Plan: ${formattedPlan}\n💰 Total: $${data.totalPrice.toFixed(2)}\n\nThank you!`;
+                const messageBody = `🚗 Spot Reserved!\n\n📍 Location: ${newBooking.lot.name}\n🚙 Plate: ${data.carNumber}\n⏱️ Plan: ${formattedPlan}\n💰 Total: $${(typeof newBooking.totalPrice === 'number' ? newBooking.totalPrice : parseFloat(newBooking.totalPrice)).toFixed(2)}\n\nThank you!`;
 
                 // Calculate webhook URL dynamically
-                // NOTE: For Twilio to reach this locally, you must use a tunneling service like Ngrok for the APP_URL
+                // NOTE: StatusCallback is only used in production; localhost cannot be reached by Twilio
                 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (req.headers.get("origin") || `http://${req.headers.get("host")}`);
-                const statusCallback = `${APP_URL}/api/webhooks/twilio`;
+                const isLocalhost = APP_URL.includes('localhost') || APP_URL.includes('127.0.0.1');
+                
+                // Build Twilio message config
+                const twilioMessageConfig = {
+                    body: messageBody,
+                    from: twilioPhoneNumber,
+                    to: toPhone
+                };
+                
+                // Only add statusCallback if not running locally
+                if (!isLocalhost) {
+                    twilioMessageConfig.statusCallback = `${APP_URL}/api/webhooks/twilio`;
+                }
 
                 let twilioMsg = null;
                 let attempt = 0;
@@ -109,12 +121,7 @@ export async function POST(req) {
                 // Basic Retry Logic (Try up to 2 times)
                 while (attempt < 2 && !success) {
                     try {
-                        twilioMsg = await twilioClient.messages.create({
-                            body: messageBody,
-                            from: twilioPhoneNumber,
-                            to: toPhone,
-                            statusCallback: statusCallback
-                        });
+                        twilioMsg = await twilioClient.messages.create(twilioMessageConfig);
                         success = true;
                     } catch (err) {
                         lastError = err;
