@@ -125,7 +125,7 @@ export default function AdminUsers() {
 
             {/* Compact Filter Bar */}
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                <form onSubmit={handleApplyFilters} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <form onSubmit={handleApplyFilters} className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                         <input
@@ -171,7 +171,7 @@ export default function AdminUsers() {
                         />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 col-span-2 sm:col-span-1">
                         <button
                             type="submit"
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-2 rounded-lg transition-all"
@@ -181,9 +181,9 @@ export default function AdminUsers() {
                         <button
                             type="button"
                             onClick={resetFilters}
-                            className="px-3 py-2 border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-100 transition-all bg-gray-50"
+                            className="px-3 py-2 border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-100 transition-all bg-gray-50 flex items-center justify-center"
                         >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                 </form>

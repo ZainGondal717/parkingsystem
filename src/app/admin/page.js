@@ -29,16 +29,16 @@ export default async function AdminDashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.label}</p>
-                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+                    <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 text-center md:text-left">
+                            <div className="order-2 md:order-1">
+                                <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.label}</p>
+                                <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
                             </div>
-                            <div className={`p-3 rounded-xl ${stat.bg}`}>
-                                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                            <div className={`p-2 md:p-3 rounded-xl ${stat.bg} order-1 md:order-2`}>
+                                <stat.icon className={`w-5 h-5 md:w-6 md:h-6 ${stat.color}`} />
                             </div>
                         </div>
                     </div>

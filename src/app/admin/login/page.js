@@ -39,8 +39,8 @@ export default function AdminLogin() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center p-3 bg-blue-100 rounded-xl mb-4">
                         <LayoutDashboard className="w-8 h-8 text-blue-600" />

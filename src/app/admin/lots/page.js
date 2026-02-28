@@ -368,19 +368,19 @@ export default function AdminLots() {
 
             {/* Modal Form */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-                    <div className="bg-white w-full max-w-5xl rounded-[40px] shadow-2xl overflow-hidden relative my-auto">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center md:p-4 bg-white md:bg-black/60 md:backdrop-blur-sm">
+                    <div className="bg-white w-full h-full md:h-auto md:max-h-[90vh] max-w-5xl md:rounded-[40px] shadow-2xl flex flex-col md:overflow-hidden relative">
                         <button
                             onClick={() => setIsModalOpen(false)}
-                            className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all z-[1002] shadow-sm"
+                            className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-gray-600 hover:text-gray-900 bg-white/90 shadow-md hover:bg-gray-100 rounded-2xl transition-all z-[1002]"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-5 h-5 md:w-6 md:h-6" />
                         </button>
 
-                        <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+                        <div className="flex flex-col md:flex-row h-full overflow-y-auto md:overflow-hidden bg-white">
                             {/* Form Left Side */}
-                            <form onSubmit={handleSubmit} className="w-full md:w-1/2 p-8 md:p-10 overflow-y-auto space-y-6">
-                                <h2 className="text-2xl font-black text-gray-900">
+                            <form onSubmit={handleSubmit} className="w-full md:w-1/2 p-5 pt-16 md:p-10 md:overflow-y-auto space-y-5 md:space-y-6 order-2 md:order-1 flex-shrink-0">
+                                <h2 className="text-xl md:text-2xl font-black text-gray-900">
                                     {editingLot ? "Edit Parking Lot" : "Create New Parking Lot"}
                                 </h2>
 
@@ -391,12 +391,12 @@ export default function AdminLots() {
                                             required
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition-all font-medium"
+                                            className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-xl md:rounded-2xl outline-none transition-all font-medium text-sm md:text-base"
                                             placeholder="e.g. Detroit Central Parking"
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Parking Slots</label>
                                             <div className="relative">
@@ -406,7 +406,7 @@ export default function AdminLots() {
                                                     required
                                                     value={formData.slots}
                                                     onChange={(e) => setFormData({ ...formData, slots: e.target.value })}
-                                                    className="w-full pl-11 pr-5 py-3.5 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition-all font-medium"
+                                                    className="w-full pl-11 pr-4 py-3 md:pr-5 md:py-3.5 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-xl md:rounded-2xl outline-none transition-all font-medium text-sm md:text-base"
                                                     placeholder="200"
                                                 />
                                             </div>
@@ -422,14 +422,14 @@ export default function AdminLots() {
                                                         setFormData({ ...formData, address: e.target.value });
                                                         setSearchQuery(e.target.value);
                                                     }}
-                                                    className="w-full pl-11 pr-5 py-3.5 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition-all font-medium"
+                                                    className="w-full pl-11 pr-4 py-3 md:pr-5 md:py-3.5 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-xl md:rounded-2xl outline-none transition-all font-medium text-sm md:text-base"
                                                     placeholder="123 Street..."
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-blue-50/50 border border-blue-100/50 rounded-3xl space-y-4">
+                                    <div className="p-4 md:p-6 bg-blue-50/50 border border-blue-100/50 rounded-2xl md:rounded-3xl space-y-4">
                                         <p className="text-xs font-black text-blue-400 uppercase tracking-widest">Rate Configuration ($)</p>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
@@ -489,13 +489,13 @@ export default function AdminLots() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 px-6 rounded-3xl shadow-xl shadow-blue-200 disabled:opacity-50 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 md:py-5 px-6 rounded-2xl md:rounded-3xl shadow-xl shadow-blue-200 disabled:opacity-50 transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-[0.98] text-sm md:text-base border border-blue-500 mb-20 md:mb-0"
                                 >
                                     {isSubmitting ? (
-                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                        <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
                                     ) : (
                                         <>
-                                            <Save className="w-6 h-6" />
+                                            <Save className="w-5 h-5 md:w-6 md:h-6" />
                                             {editingLot ? "Update Lot Details" : "Create Parking Lot"}
                                         </>
                                     )}
@@ -503,12 +503,12 @@ export default function AdminLots() {
                             </form>
 
                             {/* Map Side */}
-                            <div className="w-full md:w-1/2 h-80 md:h-auto bg-gray-100 relative group flex flex-col border-l border-gray-100">
+                            <div className="w-full md:w-1/2 h-[40vh] min-h-[250px] md:min-h-0 md:h-auto bg-gray-100 relative group flex flex-col md:border-l border-b md:border-b-0 border-gray-200 order-1 md:order-2 flex-shrink-0 z-10">
                                 {/* Persistent Search Bar on Map */}
-                                <div className="absolute top-0 left-0 right-0 z-[1001] p-6 pointer-events-none">
-                                    <div className="pointer-events-auto bg-white/95 backdrop-blur-md rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white flex items-center overflow-hidden transition-all focus-within:ring-2 focus-within:ring-blue-500 w-full transition-all duration-300">
-                                        <div className="pl-6 text-blue-600">
-                                            <Search className="w-5 h-5" />
+                                <div className="absolute top-0 left-0 right-0 z-[1001] p-4 md:p-6 pointer-events-none">
+                                    <div className="pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.15)] md:shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white flex items-center overflow-hidden transition-all focus-within:ring-2 focus-within:ring-blue-500 w-full duration-300">
+                                        <div className="pl-4 md:pl-6 text-blue-600 shrink-0">
+                                            <Search className="w-4 h-4 md:w-5 md:h-5" />
                                         </div>
                                         <input
                                             type="text"
@@ -516,29 +516,29 @@ export default function AdminLots() {
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation(e)}
                                             placeholder="Find any address..."
-                                            className="flex-1 px-4 py-5 outline-none font-bold text-gray-900 placeholder:text-gray-400 bg-transparent"
+                                            className="flex-1 px-3 py-4 md:px-4 md:py-5 outline-none font-bold text-gray-900 placeholder:text-gray-400 bg-transparent text-sm md:text-base min-w-0"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleSearchLocation}
                                             disabled={isSearching}
-                                            className="mr-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                            className="mr-1 md:mr-2 px-3 py-2 md:px-6 md:py-3 bg-blue-600 text-white rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95 shadow-md md:shadow-lg shadow-blue-200 shrink-0"
                                         >
-                                            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pin Now"}
+                                            {isSearching ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" /> : "Pin Now"}
                                         </button>
                                     </div>
 
-                                    <div className="mt-4 flex items-center gap-2">
-                                        <div className="px-4 py-2 bg-black/70 backdrop-blur rounded-2xl border border-white/10 text-[10px] font-black text-white uppercase tracking-tighter shadow-xl">
+                                    <div className="mt-2 md:mt-4 flex flex-wrap items-center gap-2">
+                                        <div className="px-3 md:px-4 py-1.5 md:py-2 bg-black/70 backdrop-blur rounded-xl md:rounded-2xl border border-white/10 text-[9px] md:text-[10px] font-black text-white uppercase tracking-tighter shadow-md md:shadow-xl">
                                             📍 PIN SYNC ACTIVE
                                         </div>
-                                        <div className="px-4 py-2 bg-blue-600 rounded-2xl text-[10px] font-black text-white uppercase tracking-tighter shadow-xl">
-                                            👆 CLICK MAP TO AUTO-POPULATE
+                                        <div className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black text-white uppercase tracking-tighter shadow-md md:shadow-xl">
+                                            👆 CLICK MAP
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="w-full h-full min-h-[500px]">
+                                <div className="w-full h-full min-h-[250px] md:min-h-[500px]">
                                     <SimpleMap
                                         position={mapPosition}
                                         setPosition={setMapPosition}
