@@ -65,12 +65,49 @@ export async function POST(req) {
     try {
         const data = await req.json();
 
+        // Check if this is an extension of an existing booking
+        if (data.bookingId) {
+            const existing = await prisma.booking.findUnique({
+                where: { id: data.bookingId },
+                include: { lot: true }
+            });
+
+            if (existing) {
+                const updatedBooking = await prisma.booking.update({
+                    where: { id: data.bookingId },
+                    data: {
+                        durationValue: existing.durationValue + parseFloat(data.durationValue),
+                        totalPrice: existing.totalPrice + parseFloat(data.totalPrice),
+                        notificationSent: false // Reset reminder for the new duration
+                    },
+                    include: { lot: true }
+                });
+
+                // Send extension confirmation SMS
+                if (twilioClient && updatedBooking.lot) {
+                    try {
+                        const toPhone = `${updatedBooking.countryCode}${updatedBooking.phoneNumber}`.trim().replace(/\s+/g, '');
+                        const messageBody = `✅ Session Extended!\n\n📍 Location: ${updatedBooking.lot.name}\n🔢 Slot: #${updatedBooking.slotNumber}\n⏱️ Additional: ${data.durationValue} ${data.durationMode}${parseFloat(data.durationValue) > 1 ? 's' : ''}\n💰 New Total: $${updatedBooking.totalPrice.toFixed(2)}\n\nThank you!`;
+
+                        await twilioClient.messages.create({
+                            body: messageBody,
+                            from: twilioPhoneNumber,
+                            to: toPhone
+                        });
+                    } catch (smsErr) { console.error("Extension SMS Error:", smsErr); }
+                }
+
+                return NextResponse.json(updatedBooking);
+            }
+        }
+
         const newBooking = await prisma.booking.create({
             data: {
                 lotId: data.lotId,
                 carNumber: data.carNumber,
                 phoneNumber: data.phoneNumber,
                 countryCode: data.countryCode,
+                slotNumber: parseInt(data.slotNumber),
                 durationMode: data.durationMode,
                 durationValue: parseFloat(data.durationValue),
                 totalPrice: parseFloat(data.totalPrice),
@@ -94,20 +131,20 @@ export async function POST(req) {
                     formattedPlan = `${data.durationValue} ${unit}${data.durationValue > 1 ? 's' : ''}`;
                 }
 
-                const messageBody = `🚗 Spot Reserved!\n\n📍 Location: ${newBooking.lot.name}\n🚙 Plate: ${data.carNumber}\n⏱️ Plan: ${formattedPlan}\n💰 Total: $${(typeof newBooking.totalPrice === 'number' ? newBooking.totalPrice : parseFloat(newBooking.totalPrice)).toFixed(2)}\n\nThank you!`;
+                const messageBody = `🚗 Spot Reserved!\n\n📍 Location: ${newBooking.lot.name}\n🚙 Plate: ${data.carNumber}\n🔢 Slot: #${data.slotNumber}\n⏱️ Plan: ${formattedPlan}\n💰 Total: $${(typeof newBooking.totalPrice === 'number' ? newBooking.totalPrice : parseFloat(newBooking.totalPrice)).toFixed(2)}\n\nThank you!`;
 
                 // Calculate webhook URL dynamically
                 // NOTE: StatusCallback is only used in production; localhost cannot be reached by Twilio
                 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (req.headers.get("origin") || `http://${req.headers.get("host")}`);
                 const isLocalhost = APP_URL.includes('localhost') || APP_URL.includes('127.0.0.1');
-                
+
                 // Build Twilio message config
                 const twilioMessageConfig = {
                     body: messageBody,
                     from: twilioPhoneNumber,
                     to: toPhone
                 };
-                
+
                 // Only add statusCallback if not running locally
                 if (!isLocalhost) {
                     twilioMessageConfig.statusCallback = `${APP_URL}/api/webhooks/twilio`;

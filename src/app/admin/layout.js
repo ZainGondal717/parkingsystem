@@ -39,6 +39,7 @@ export default function AdminLayout({ children }) {
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { label: "Users", href: "/admin/users", icon: Users },
     { label: "Parking Lots", href: "/admin/lots", icon: MapPin },
+    { label: "Slots Monitoring", href: "/admin/slots", icon: LayoutDashboard },
     { label: "Book Page Banner", href: "/admin/lot-a-slider", icon: ImageIcon },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ];

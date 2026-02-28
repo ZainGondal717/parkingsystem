@@ -73,9 +73,11 @@ model Booking {
   carNumber     String
   phoneNumber   String
   countryCode   String
+  slotNumber    Int?     // New field for slot selection
   durationMode  String   // half, hourly, daily, weekly, monthly
   durationValue Float
   totalPrice    Float
+  notificationSent Boolean @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   smsLogs       SmsLog[]

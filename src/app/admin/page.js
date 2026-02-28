@@ -48,12 +48,24 @@ export default async function AdminDashboard() {
             {/* Real-time Data Section */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Database Entries</h2>
-                    <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">Live Connection</span>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Live Slots Monitoring</h2>
+                    <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">Real-time Map</span>
                 </div>
-                <div className="p-8 text-center text-gray-500">
-                    <p className="mb-2">Your dashboard is now live-fetching data from MongoDB.</p>
-                    <p className="text-sm">Add documents to your collections to see stats update.</p>
+                <div className="p-8 text-center">
+                    <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600">
+                        <Car className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Monitor Your Parking Lots</h3>
+                    <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
+                        View live occupancy, remaining time for booked slots, and vacant spaces across all your locations in one floor plan view.
+                    </p>
+                    <a
+                        href="/admin/slots"
+                        className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-blue-200 dark:shadow-none"
+                    >
+                        View Floor Plan
+                        <TrendingUp className="w-4 h-4" />
+                    </a>
                 </div>
             </div>
         </div>

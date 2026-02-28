@@ -197,6 +197,7 @@ export default function AdminUsers() {
                             <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lot / Date</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Vehicle Plate</th>
+                                <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Slot</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Stay Plan</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contact</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Price</th>
@@ -234,6 +235,11 @@ export default function AdminUsers() {
                                         <td className="px-5 py-3">
                                             <span className="inline-block px-2 py-1 bg-gray-100 border border-gray-200 rounded text-xs px-2 py-1 font-mono font-bold text-gray-700 uppercase tracking-wider">
                                                 {booking.carNumber}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <span className="inline-block px-2 py-1 bg-blue-50 border border-blue-100 rounded text-xs px-2 py-1 font-bold text-blue-700 uppercase tracking-wider">
+                                                #{booking.slotNumber || 'N/A'}
                                             </span>
                                         </td>
                                         <td className="px-5 py-3">

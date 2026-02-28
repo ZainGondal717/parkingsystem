@@ -13,7 +13,8 @@ import {
     ArrowRight,
     MapPin,
     Globe,
-    Camera
+    Camera,
+    LayoutGrid
 } from "lucide-react";
 
 // Massive country code list with full names and standard ISO codes for react-world-flags
@@ -125,8 +126,16 @@ export default function BookingForm({ lots = [] }) {
 
     const lotDropdownRef = useRef(null);
     const countryDropdownRef = useRef(null);
+    const slotDropdownRef = useRef(null);
     const fileInputRef = useRef(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [selectedSlot, setSelectedSlot] = useState(null);
+    const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+    const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
+    const [slotSearchQuery, setSlotSearchQuery] = useState("");
+    const [extensionData, setExtensionData] = useState(null);
+    const [timeLeftInSession, setTimeLeftInSession] = useState(null);
 
     // CRITICAL: Ensure 'lots' is treated as an array and search is accurate
     const filteredLots = Array.isArray(lots) ? lots.filter(lot =>
@@ -148,6 +157,102 @@ export default function BookingForm({ lots = [] }) {
         setTotalPrice(price.toFixed(2));
     }, [selectedLot, formData.durationMode, formData.durationValue]);
 
+    // Handle Extension logic
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const bookingId = params.get('extend');
+
+        if (bookingId) {
+            const fetchExtensionBooking = async () => {
+                try {
+                    const res = await fetch(`/api/bookings/${bookingId}`);
+                    if (!res.ok) return;
+                    const booking = await res.json();
+
+                    if (booking) {
+                        setExtensionData(booking);
+                        setSelectedLot(booking.lot);
+                        setFormData(prev => ({
+                            ...prev,
+                            carNumber: booking.carNumber,
+                            phoneNumber: booking.phoneNumber
+                        }));
+                        const country = countryCodes.find(c => c.code === booking.countryCode);
+                        if (country) setSelectedCountry(country);
+                        setSelectedSlot(booking.slotNumber);
+                    }
+                } catch (err) { console.error("Extension fetch error:", err); }
+            };
+            fetchExtensionBooking();
+        }
+    }, [lots]);
+
+    // Timer for time left in session
+    useEffect(() => {
+        if (!extensionData) return;
+
+        const timer = setInterval(() => {
+            const start = new Date(extensionData.createdAt);
+            let endMs = start.getTime();
+            const value = extensionData.durationValue || 0;
+            switch (extensionData.durationMode) {
+                case 'half': endMs += (30 * 60 * 1000); break;
+                case 'hourly': endMs += (value * 60 * 60 * 1000); break;
+                case 'daily': endMs += (value * 24 * 60 * 60 * 1000); break;
+                case 'weekly': endMs += (value * 7 * 24 * 60 * 60 * 1000); break;
+                case 'monthly':
+                    const endObj = new Date(start);
+                    endObj.setMonth(start.getMonth() + Math.floor(value));
+                    endMs = endObj.getTime();
+                    break;
+            }
+
+            const diff = endMs - Date.now();
+            if (diff <= 0) {
+                setTimeLeftInSession("Expired");
+                clearInterval(timer);
+            } else {
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeftInSession(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [extensionData]);
+
+    useEffect(() => {
+        const fetchAvailableSlots = async () => {
+            if (!selectedLot) {
+                setAvailableSlots([]);
+                setSelectedSlot(null);
+                return;
+            }
+
+            setIsLoadingSlots(true);
+            try {
+                const res = await fetch(`/api/slots?lotId=${selectedLot.id}`);
+                const data = await res.json();
+                if (data.slots) {
+                    setAvailableSlots(data.slots);
+                } else {
+                    setAvailableSlots([]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch slots:", err);
+                setAvailableSlots([]);
+            } finally {
+                setIsLoadingSlots(false);
+            }
+        };
+
+        fetchAvailableSlots();
+        // Re-fetch every 1 minute to keep it updated
+        const interval = setInterval(fetchAvailableSlots, 60000);
+        return () => clearInterval(interval);
+    }, [selectedLot]);
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (lotDropdownRef.current && !lotDropdownRef.current.contains(event.target)) {
@@ -155,6 +260,9 @@ export default function BookingForm({ lots = [] }) {
             }
             if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target)) {
                 setIsCountryDropdownOpen(false);
+            }
+            if (slotDropdownRef.current && !slotDropdownRef.current.contains(event.target)) {
+                setIsSlotDropdownOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -222,26 +330,41 @@ export default function BookingForm({ lots = [] }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!selectedLot) { alert("Please select a parking lot."); return; }
+        if (!selectedSlot) { alert("Please select a parking slot."); return; }
         setIsSubmitting(true);
         try {
             const response = await fetch("/api/admin/bookings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    ...formData,
                     lotId: selectedLot.id,
-                    carNumber: formData.carNumber,
-                    countryCode: selectedCountry.code, // now we use correct code
-                    phoneNumber: formData.phoneNumber,
-                    durationMode: formData.durationMode,
-                    durationValue: formData.durationValue,
+                    slotNumber: selectedSlot,
                     totalPrice: totalPrice,
+                    countryCode: selectedCountry.code,
+                    bookingId: extensionData?.id // Pass this for extension
                 }),
             });
             if (response.ok) {
-                alert("Booking successful!");
+                const booking = await response.json();
+                alert(`Booking successful! \n\n📍 Location: ${selectedLot.name}\n🚙 Plate: ${formData.carNumber}\n🔢 Slot: ${selectedSlot}\n💰 Total: $${totalPrice}`);
+
+                // Clear form but keep lot to show updated slots
                 setFormData({ carNumber: "", phoneNumber: "", durationMode: "hourly", durationValue: 1 });
-                setSelectedLot(null);
-            } else { alert("Failed to save booking."); }
+                setSelectedSlot(null);
+
+                // Refresh slots immediately for the current lot
+                try {
+                    setIsLoadingSlots(true);
+                    const res = await fetch(`/api/slots?lotId=${selectedLot.id}`);
+                    const data = await res.json();
+                    if (data.availableSlots) setAvailableSlots(data.availableSlots);
+                } catch (err) {
+                    console.error("Refresh failed", err);
+                } finally {
+                    setIsLoadingSlots(false);
+                }
+            } else { alert("Failed to save booking. Make sure you selected a slot."); }
         } catch (err) { alert("Error connecting to server."); }
         finally { setIsSubmitting(false); }
     };
@@ -255,13 +378,26 @@ export default function BookingForm({ lots = [] }) {
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-200">
+                    {extensionData && (
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-in slide-in-from-top duration-500">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Clock className="w-5 h-5 text-blue-600" />
+                                <h3 className="text-sm font-black text-blue-900 uppercase tracking-tight">Extending Session</h3>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs font-bold text-blue-700">Previous Time Left:</p>
+                                <span className={`text-sm font-mono font-black ${timeLeftInSession === 'Expired' ? 'text-red-500' : 'text-blue-600'}`}>
+                                    {timeLeftInSession || "Calculating..."}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     <form onSubmit={handleSubmit} className="space-y-4">
-
                         {/* Parking Lot Dropdown */}
                         <div className="relative" ref={lotDropdownRef}>
                             <div
-                                onClick={() => setIsLotDropdownOpen(!isLotDropdownOpen)}
-                                className="w-full h-14 px-4 border border-gray-300 rounded-lg flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-all focus:border-[#1877f2]"
+                                onClick={() => !extensionData && setIsLotDropdownOpen(!isLotDropdownOpen)}
+                                className={`w-full h-14 px-4 border border-gray-300 rounded-lg flex items-center justify-between transition-all ${extensionData ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'cursor-pointer hover:bg-gray-50 focus:border-[#1877f2]'}`}
                             >
                                 <div className="flex items-center gap-3">
                                     <MapPin className="w-5 h-5 text-gray-400" />
@@ -309,10 +445,11 @@ export default function BookingForm({ lots = [] }) {
                             <Car className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#1877f2]" />
                             <input
                                 required
+                                readOnly={!!extensionData}
                                 placeholder="Car Plate Number"
                                 value={formData.carNumber}
                                 onChange={(e) => setFormData({ ...formData, carNumber: e.target.value.toUpperCase() })}
-                                className="w-full h-14 pl-12 pr-12 border border-gray-300 rounded-lg outline-none focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2] text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal"
+                                className={`w-full h-14 pl-12 pr-12 border border-gray-300 rounded-lg outline-none text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal ${extensionData ? 'bg-gray-50 cursor-not-allowed text-gray-400' : 'focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2]'}`}
                             />
 
                             {/* Hidden file input for camera scan */}
@@ -326,19 +463,21 @@ export default function BookingForm({ lots = [] }) {
                             />
 
                             {/* Scan Button */}
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isScanning}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md transition-colors border border-gray-200"
-                                title="Scan License Plate"
-                            >
-                                {isScanning ? (
-                                    <Loader2 className="w-4 h-4 text-[#1877f2] animate-spin" />
-                                ) : (
-                                    <Camera className="w-4 h-4 text-gray-600 hover:text-[#1877f2]" />
-                                )}
-                            </button>
+                            {!extensionData && (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isScanning}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md transition-colors border border-gray-200"
+                                    title="Scan License Plate"
+                                >
+                                    {isScanning ? (
+                                        <Loader2 className="w-4 h-4 text-[#1877f2] animate-spin" />
+                                    ) : (
+                                        <Camera className="w-4 h-4 text-gray-600 hover:text-[#1877f2]" />
+                                    )}
+                                </button>
+                            )}
                         </div>
 
                         {/* CUSTOM COUNTRY CODE DROPDOWN + PHONE */}
@@ -389,6 +528,99 @@ export default function BookingForm({ lots = [] }) {
                                 />
                             </div>
                         </div>
+
+                        {/* Slot Selection - Professional Searchable Dropdown */}
+                        {selectedLot && (
+                            <div className="relative pt-2" ref={slotDropdownRef}>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 pl-1 italic">
+                                    {isLoadingSlots ? "Syncing slots..." : `Choose Parking Slot`}
+                                </p>
+
+                                <div
+                                    onClick={() => !isLoadingSlots && !extensionData && setIsSlotDropdownOpen(!isSlotDropdownOpen)}
+                                    className={`w-full h-14 px-4 border rounded-lg flex items-center justify-between transition-all ${isSlotDropdownOpen ? 'border-[#1877f2] ring-2 ring-blue-50' : 'border-gray-300 hover:border-gray-400'
+                                        } ${isLoadingSlots || extensionData ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white cursor-pointer'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedSlot ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                                            <LayoutGrid className={`w-4 h-4 ${selectedSlot ? 'text-[#1877f2]' : 'text-gray-400'}`} />
+                                        </div>
+                                        <span className={selectedSlot ? "text-gray-900 font-black text-sm" : "text-gray-400 text-sm font-bold"}>
+                                            {selectedSlot ? `SPACE #${selectedSlot}` : "Select a free slot"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {!selectedSlot && !isLoadingSlots && (
+                                            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-tighter">
+                                                {availableSlots.filter(s => s.status === 'available').length} Free
+                                            </span>
+                                        )}
+                                        {isLoadingSlots ? (
+                                            <Loader2 className="w-4 h-4 animate-spin text-[#1877f2]" />
+                                        ) : (
+                                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isSlotDropdownOpen ? 'rotate-180' : ''}`} />
+                                        )}
+                                    </div>
+                                </div>
+
+                                {isSlotDropdownOpen && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in zoom-in-95 duration-200">
+                                        <div className="p-3 border-b border-gray-100 bg-gray-50/50">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    placeholder="Find slot number..."
+                                                    value={slotSearchQuery}
+                                                    onChange={(e) => setSlotSearchQuery(e.target.value)}
+                                                    className="w-full h-10 pl-9 pr-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1877f2] font-bold"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="max-h-56 overflow-y-auto grid grid-cols-4 gap-1 p-2 bg-white scrollbar-thin scrollbar-thumb-gray-200">
+                                            {availableSlots
+                                                .filter(s => s.number.toString().includes(slotSearchQuery))
+                                                .map((slot) => {
+                                                    const isBusy = slot.status === 'busy' || slot.status === 'occupied';
+                                                    return (
+                                                        <div
+                                                            key={slot.number}
+                                                            onClick={() => {
+                                                                if (!isBusy) {
+                                                                    setSelectedSlot(slot.number);
+                                                                    setIsSlotDropdownOpen(false);
+                                                                    setSlotSearchQuery("");
+                                                                }
+                                                            }}
+                                                            className={`h-11 flex flex-col items-center justify-center rounded-lg border text-[10px] font-black transition-all ${isBusy
+                                                                ? 'bg-red-50 border-red-50 text-red-300 cursor-not-allowed'
+                                                                : selectedSlot === slot.number
+                                                                    ? 'bg-[#1877f2] text-white border-[#1877f2] shadow-sm'
+                                                                    : 'bg-white text-gray-700 border-gray-100 hover:bg-blue-50 hover:border-blue-200 cursor-pointer'
+                                                                }`}
+                                                        >
+                                                            <span>#{slot.number}</span>
+                                                            {!isBusy && <span className={`text-[7px] ${selectedSlot === slot.number ? 'text-blue-100' : 'text-emerald-500'} uppercase mt-px`}>Free</span>}
+                                                            {isBusy && <span className="text-[7px] text-red-300 uppercase mt-px tracking-tighter">Taken</span>}
+                                                        </div>
+                                                    );
+                                                })}
+                                            {availableSlots.length > 0 && availableSlots.filter(s => s.number.toString().includes(slotSearchQuery)).length === 0 && (
+                                                <div className="col-span-4 py-8 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                    Slot not found
+                                                </div>
+                                            )}
+                                        </div>
+                                        {availableSlots.length === 0 && !isLoadingSlots && (
+                                            <div className="p-8 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                No slots configured.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Plan Tabs */}
                         <div className="pt-2">
