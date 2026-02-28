@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SliderImage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  url       String
+  publicId  String   @unique
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  lot       String   @default("A") // To differentiate between lots if needed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GlobalSettings {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model ParkingLot {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  capacity      Int
+  address       String
+  latitude      Float?
+  longitude     Float?
+  
+  // Rates
+  halfHourRate  Float    @default(0)
+  hourlyRate    Float    @default(0)
+  dailyRate     Float    @default(0)
+  weeklyRate    Float    @default(0)
+  monthlyRate   Float    @default(0)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  bookings      Booking[]
+}
+
+model Booking {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  lotId         String   @db.ObjectId
+  lot           ParkingLot @relation(fields: [lotId], references: [id])
+  carNumber     String
+  phoneNumber   String
+  countryCode   String
+  durationMode  String   // half, hourly, daily, weekly, monthly
+  durationValue Float
+  totalPrice    Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  smsLogs       SmsLog[]
+}
+
+model SmsLog {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId       String   @db.ObjectId
+  phone           String
+  messageSid      String   @unique
+  deliveryStatus  String   @default("queued") // queued, sent, delivered, failed
+  timestamp       DateTime @default(now())
+  
+  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
