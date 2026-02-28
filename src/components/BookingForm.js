@@ -65,6 +65,45 @@ const countryCodes = [
     { code: "+855", iso: "KH", name: "Cambodia" },
 ];
 
+// Custom utility for client-side image compression (important for mobile)
+const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 1280; // Good resolution for OCR but small enough to upload quickly
+
+                if (width > height) {
+                    if (width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    }
+                } else {
+                    if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+                // Compress as JPEG to significantly reduce file size
+                resolve(canvas.toDataURL("image/jpeg", 0.7));
+            };
+            img.onerror = () => reject(new Error("Failed to load image"));
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+    });
+};
+
 export default function BookingForm({ lots = [] }) {
     const [selectedLot, setSelectedLot] = useState(null);
     const [isLotDropdownOpen, setIsLotDropdownOpen] = useState(false);
@@ -134,52 +173,49 @@ export default function BookingForm({ lots = [] }) {
 
         setIsScanning(true);
         try {
-            // Convert file to base64
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onloadend = async () => {
-                const base64data = reader.result;
+            // Compress the image before sending to prevent timeouts and payload size issues on mobile
+            const compressedBase64 = await compressImage(file);
 
-                const response = await fetch("/api/scan-plate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ image: base64data }),
-                });
+            const response = await fetch("/api/scan-plate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: compressedBase64 }),
+            });
 
-                if (!response.ok) {
+            if (!response.ok) {
+                // Handle non-200 responses (like "Payload Too Large" or "Server Error")
+                let errorMessage = "Failed to scan image. Please try again.";
+                try {
                     const errorData = await response.json();
-                    alert(errorData.error || "Failed to scan image.");
-                    setIsScanning(false);
-                    return;
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    // Response might not be JSON (e.g. standard server error page)
                 }
+                throw new Error(errorMessage);
+            }
 
-                const data = await response.json();
-                if (data.text) {
-                    // Plate Recognizer gives us a clean string. Let's find the most likely plate-looking chunk.
-                    const words = data.text.toUpperCase().split(/[\s\n-]+/).map(w => w.replace(/[^A-Z0-9]/g, ''));
-                    let plateLike = words.find(w => w.length >= 4 && w.length <= 11 && /[A-Z]/.test(w) && /[0-9]/.test(w));
+            const data = await response.json();
+            if (data.text) {
+                // Plate Recognizer already gives us a clean plate string.
+                // We'll trust its result but do a quick sanity cleanup.
+                const plateValue = data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-                    if (!plateLike) {
-                        const allCleaned = words.filter(w => w.length >= 4);
-                        if (allCleaned.length > 0) {
-                            plateLike = allCleaned[0];
-                        }
-                    }
-
-                    if (plateLike) {
-                        setFormData(prev => ({ ...prev, carNumber: plateLike.substring(0, 10) }));
-                    } else {
-                        alert("Could not detect license plate clearly. Please try again.");
-                    }
+                if (plateValue) {
+                    setFormData(prev => ({ ...prev, carNumber: plateValue.substring(0, 10) }));
                 } else {
-                    alert("Could not detect any text. Try to get closer to the plate.");
+                    throw new Error("Could not detect license plate clearly. Please try again.");
                 }
-                setIsScanning(false);
-            };
+            } else {
+                throw new Error("Could not detect any text. Try to get closer to the plate.");
+            }
         } catch (error) {
             console.error("Scan Error:", error);
-            alert("Error scanning image.");
+            alert(error.message || "Error scanning image.");
+        } finally {
+            // ALWAYS reset scanning state to stop the loading spinner
             setIsScanning(false);
+            // Clear the file input so the same file can be selected again if needed
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
