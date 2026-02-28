@@ -135,27 +135,48 @@ export default function BookingForm({ lots = [] }) {
 
         setIsScanning(true);
         try {
-            const { data: { text } } = await Tesseract.recognize(
+            const { data } = await Tesseract.recognize(
                 file,
                 'eng',
                 { logger: m => console.log(m) }
             );
 
-            // 1. Tesseract often reads background noise (grills, shadows, dirt) as random letters.
-            // We split the output into lines and words to search for a typical license plate format.
-            const tokens = text.toUpperCase().split(/[\s\n-]+/).map(w => w.replace(/[^A-Z0-9]/g, ''));
+            // 1. Filter out words that lack letters or numbers
+            const validWords = data.words.filter(w => /[A-Za-z0-9]/.test(w.text));
 
-            // 2. Find a strongly plate-like word: 4 to 10 chars long, contains at least one letter and at least one number
-            let plateLike = tokens.find(w => w.length >= 4 && w.length <= 11 && /[A-Z]/.test(w) && /[0-9]/.test(w));
+            if (validWords.length > 0) {
+                // 2. Identify word heights (license plate text is usually the largest text in a photo of a plate)
+                validWords.forEach(w => {
+                    w.height = w.bbox.y1 - w.bbox.y0;
+                });
 
-            // 3. If no clear plate was found, fallback to scraping all alphanumeric chars.
-            let rawAlphaNum = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                // Sort by height descending
+                validWords.sort((a, b) => b.height - a.height);
 
-            // 4. Limit to a max length so the input field isn't flooded with 100 characters of noise
-            let finalNumber = plateLike || (rawAlphaNum.length > 10 ? rawAlphaNum.substring(0, 10) : rawAlphaNum);
+                // 3. Get the max height of the largest valid text
+                const maxHeight = validWords[0].height;
 
-            if (finalNumber) {
-                setFormData(prev => ({ ...prev, carNumber: finalNumber }));
+                // 4. Keep words that share this large font size (e.g. at least 40% of the maximum height)
+                const tallWords = validWords.filter(w => w.height > maxHeight * 0.4);
+
+                // 5. Sort them left-to-right to maintain order (e.g. AUD then 3359)
+                tallWords.sort((a, b) => a.bbox.x0 - b.bbox.x0);
+
+                // 6. Stitch together only the letters and digits
+                let finalNumber = tallWords
+                    .map(w => w.text.replace(/[^A-Za-z0-9]/g, '').toUpperCase())
+                    .join('');
+
+                // Failsafe limit
+                finalNumber = finalNumber.substring(0, 10);
+
+                if (finalNumber) {
+                    setFormData(prev => ({ ...prev, carNumber: finalNumber }));
+                } else {
+                    alert("Could not detect license plate clearly. Please try again.");
+                }
+            } else {
+                alert("Could not detect any text. Try to get closer to the plate.");
             }
         } catch (error) {
             console.error(error);
