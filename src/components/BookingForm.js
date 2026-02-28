@@ -12,8 +12,10 @@ import {
     Calendar,
     ArrowRight,
     MapPin,
-    Globe
+    Globe,
+    Camera
 } from "lucide-react";
+import Tesseract from 'tesseract.js';
 
 // Massive country code list with full names and standard ISO codes for react-world-flags
 const countryCodes = [
@@ -85,6 +87,8 @@ export default function BookingForm({ lots = [] }) {
 
     const lotDropdownRef = useRef(null);
     const countryDropdownRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const [isScanning, setIsScanning] = useState(false);
 
     // CRITICAL: Ensure 'lots' is treated as an array and search is accurate
     const filteredLots = Array.isArray(lots) ? lots.filter(lot =>
@@ -123,6 +127,38 @@ export default function BookingForm({ lots = [] }) {
         let value = 1;
         if (mode === "half") value = 0.5;
         setFormData({ ...formData, durationMode: mode, durationValue: value });
+    };
+
+    const handleCapture = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsScanning(true);
+        try {
+            const { data: { text } } = await Tesseract.recognize(
+                file,
+                'eng',
+                { logger: m => console.log(m) }
+            );
+
+            // Extract alphanumeric characters for a license plate
+            // Some plates might have spaces or dashes, let's keep it simple or just take the raw string
+            // actually license plates are usually alphanumeric
+            const cleanedText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+
+            if (cleanedText) {
+                setFormData(prev => ({ ...prev, carNumber: cleanedText }));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error scanning image.");
+        } finally {
+            setIsScanning(false);
+            // Reset input so the same file can be chosen again if needed
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -218,8 +254,33 @@ export default function BookingForm({ lots = [] }) {
                                 placeholder="Car Plate Number"
                                 value={formData.carNumber}
                                 onChange={(e) => setFormData({ ...formData, carNumber: e.target.value.toUpperCase() })}
-                                className="w-full h-14 pl-12 pr-4 border border-gray-300 rounded-lg outline-none focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2] text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal"
+                                className="w-full h-14 pl-12 pr-12 border border-gray-300 rounded-lg outline-none focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2] text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal"
                             />
+
+                            {/* Hidden file input for camera scan */}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={handleCapture}
+                            />
+
+                            {/* Scan Button */}
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isScanning}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md transition-colors border border-gray-200"
+                                title="Scan License Plate"
+                            >
+                                {isScanning ? (
+                                    <Loader2 className="w-4 h-4 text-[#1877f2] animate-spin" />
+                                ) : (
+                                    <Camera className="w-4 h-4 text-gray-600 hover:text-[#1877f2]" />
+                                )}
+                            </button>
                         </div>
 
                         {/* CUSTOM COUNTRY CODE DROPDOWN + PHONE */}
