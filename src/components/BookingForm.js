@@ -15,7 +15,6 @@ import {
     Globe,
     Camera
 } from "lucide-react";
-import Tesseract from 'tesseract.js';
 
 // Massive country code list with full names and standard ISO codes for react-world-flags
 const countryCodes = [
@@ -135,58 +134,52 @@ export default function BookingForm({ lots = [] }) {
 
         setIsScanning(true);
         try {
-            const { data } = await Tesseract.recognize(
-                file,
-                'eng',
-                { logger: m => console.log(m) }
-            );
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = async () => {
+                const base64data = reader.result;
 
-            // 1. Filter out words that lack letters or numbers
-            const validWords = data.words.filter(w => /[A-Za-z0-9]/.test(w.text));
-
-            if (validWords.length > 0) {
-                // 2. Identify word heights (license plate text is usually the largest text in a photo of a plate)
-                validWords.forEach(w => {
-                    w.height = w.bbox.y1 - w.bbox.y0;
+                const response = await fetch("/api/scan-plate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: base64data }),
                 });
 
-                // Sort by height descending
-                validWords.sort((a, b) => b.height - a.height);
-
-                // 3. Get the max height of the largest valid text
-                const maxHeight = validWords[0].height;
-
-                // 4. Keep words that share this large font size (e.g. at least 40% of the maximum height)
-                const tallWords = validWords.filter(w => w.height > maxHeight * 0.4);
-
-                // 5. Sort them left-to-right to maintain order (e.g. AUD then 3359)
-                tallWords.sort((a, b) => a.bbox.x0 - b.bbox.x0);
-
-                // 6. Stitch together only the letters and digits
-                let finalNumber = tallWords
-                    .map(w => w.text.replace(/[^A-Za-z0-9]/g, '').toUpperCase())
-                    .join('');
-
-                // Failsafe limit
-                finalNumber = finalNumber.substring(0, 10);
-
-                if (finalNumber) {
-                    setFormData(prev => ({ ...prev, carNumber: finalNumber }));
-                } else {
-                    alert("Could not detect license plate clearly. Please try again.");
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(errorData.error || "Failed to scan image.");
+                    setIsScanning(false);
+                    return;
                 }
-            } else {
-                alert("Could not detect any text. Try to get closer to the plate.");
-            }
+
+                const data = await response.json();
+                if (data.text) {
+                    // Plate Recognizer gives us a clean string. Let's find the most likely plate-looking chunk.
+                    const words = data.text.toUpperCase().split(/[\s\n-]+/).map(w => w.replace(/[^A-Z0-9]/g, ''));
+                    let plateLike = words.find(w => w.length >= 4 && w.length <= 11 && /[A-Z]/.test(w) && /[0-9]/.test(w));
+
+                    if (!plateLike) {
+                        const allCleaned = words.filter(w => w.length >= 4);
+                        if (allCleaned.length > 0) {
+                            plateLike = allCleaned[0];
+                        }
+                    }
+
+                    if (plateLike) {
+                        setFormData(prev => ({ ...prev, carNumber: plateLike.substring(0, 10) }));
+                    } else {
+                        alert("Could not detect license plate clearly. Please try again.");
+                    }
+                } else {
+                    alert("Could not detect any text. Try to get closer to the plate.");
+                }
+                setIsScanning(false);
+            };
         } catch (error) {
-            console.error(error);
+            console.error("Scan Error:", error);
             alert("Error scanning image.");
-        } finally {
             setIsScanning(false);
-            // Reset input so the same file can be chosen again if needed
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
         }
     };
 
