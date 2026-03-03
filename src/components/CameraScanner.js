@@ -193,19 +193,19 @@ export default function CameraScanner({ onPlateDetected, onClose }) {
 
                     {/* Scanning Frame Box */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-96 h-56 border-2 border-green-400/40 rounded-xl"></div>
+                        <div className="relative w-96 h-56 border-2 border-green-400/40 rounded-xl overflow-hidden">
+                            {/* Green Scanning Line - Inside Box Only */}
+                            <div
+                                className="absolute left-0 right-0 w-full h-0.5 bg-gradient-to-b from-transparent via-green-400 to-transparent shadow-lg shadow-green-400/50"
+                                style={{
+                                    top: `${scanLinePosition}%`,
+                                    transition: 'none'
+                                }}
+                            ></div>
+                        </div>
                     </div>
 
                     {/* Green Scanning Line - Top to Bottom */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
-                        <div
-                            className="absolute left-0 right-0 h-0.5 bg-gradient-to-b from-transparent via-green-400 to-transparent shadow-lg shadow-green-400/50"
-                            style={{
-                                top: `${scanLinePosition}%`,
-                                transition: 'none'
-                            }}
-                        ></div>
-                    </div>
 
                     {/* Hidden Canvas */}
                     <canvas ref={canvasRef} className="hidden" />
@@ -213,7 +213,7 @@ export default function CameraScanner({ onPlateDetected, onClose }) {
 
                 {/* Simple Status Text */}
                 <div className="absolute bottom-6 left-0 right-0 text-center">
-                    <p className="text-green-400 text-sm font-semibold animate-pulse">🔍 Scanning...</p>
+                    <p className="text-green-400 text-sm font-semibold animate-pulse">Scanning...</p>
                 </div>
             </div>
         </div>
