@@ -97,7 +97,7 @@ export default function Locations() {
               <div key={item} className="flex flex-col items-center group transform-gpu transition-all duration-400 hover:scale-105 hover:rotate-2">
                 {/* Subtle 3D Circle Shape - Mobile */}
                 {item === 1 || item === 2 ? (
-                  <a href={item === 1 ? '/lot-a' : 'http://www.wayneparking.com/'} 
+                  <a href={item === 1 ? '/book-parking' : 'http://www.wayneparking.com/'} 
                      target={item === 2 ? '_blank' : '_self'}
                      rel={item === 2 ? 'noopener noreferrer' : ''}
                      className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden border-3 border-gray-300 hover:border-blue-500 transition-all duration-400 cursor-pointer relative shadow-lg hover:shadow-xl transform-gpu preserve-3d block">
@@ -152,7 +152,7 @@ export default function Locations() {
                 
                 {/* Enhanced 3D Tab Below Circle - Mobile */}
                 {item === 1 || item === 2 ? (
-                  <a href={item === 1 ? '/lot-a' : 'http://www.wayneparking.com/'} 
+                  <a href={item === 1 ? '/book-parking' : 'http://www.wayneparking.com/'} 
                      target={item === 2 ? '_blank' : '_self'}
                      rel={item === 2 ? 'noopener noreferrer' : ''}
                      className="bg-gradient-to-br from-gray-100 via-white to-gray-200 rounded-lg px-3 py-1.5 text-center hover:from-blue-100 hover:via-blue-50 hover:to-blue-200 transition-all duration-400 cursor-pointer mt-2 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 border border-gray-300 hover:border-blue-400 w-full relative transform-gpu preserve-3d block">
@@ -169,7 +169,7 @@ export default function Locations() {
                     <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-transparent via-black/5 to-transparent opacity-50"></div>
                     
                     <span className="text-[11px] font-bold text-gray-800 group-hover:text-blue-900 transition-colors duration-400 block relative z-10 drop-shadow-xs">
-                      {item === 1 ? '1102 Adams Toledo' : 'Parent Company'}
+                      {item === 1 ? 'Book Parking' : 'Parent Company'}
                     </span>
                     <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent mt-0.5 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-400"></div>
                   </a>
@@ -206,7 +206,7 @@ export default function Locations() {
               <div key={item} className="flex flex-col items-center flex-shrink-0 group">
                 {/* Circle Shape */}
                 {item === 1 || item === 2 ? (
-                  <a href={item === 1 ? '/lot-a' : 'http://www.wayneparking.com/'} 
+                  <a href={item === 1 ? '/book-parking' : 'http://www.wayneparking.com/'} 
                      target={item === 2 ? '_blank' : '_self'}
                      rel={item === 2 ? 'noopener noreferrer' : ''}
                      className="w-80 h-80 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden border-4 border-gray-300 hover:border-blue-500 transition-all duration-500 cursor-pointer transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 relative block">
@@ -244,12 +244,12 @@ export default function Locations() {
                 )}
                 {/* Tab Below Circle */}
                 {item === 1 || item === 2 ? (
-                  <a href={item === 1 ? '/lot-a' : 'http://www.wayneparking.com/'} 
+                  <a href={item === 1 ? '/book-parking' : 'http://www.wayneparking.com/'} 
                      target={item === 2 ? '_blank' : '_self'}
                      rel={item === 2 ? 'noopener noreferrer' : ''}
                      className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl px-6 py-3 text-center hover:from-blue-100 hover:to-blue-200 transition-all duration-300 cursor-pointer mt-4 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 border border-gray-300 hover:border-blue-400 block">
                     <span className="text-sm font-bold text-gray-800 group-hover:text-blue-900 transition-colors duration-300">
-                      {item === 1 ? '1102 Adams Toledo' : 'Parent Company'}
+                      {item === 1 ? 'Book Parking' : 'Parent Company'}
                     </span>
                     <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent mt-1 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
                   </a>

@@ -110,9 +110,21 @@ export default function BookBannerAdmin() {
                     <CldUploadWidget
                         uploadPreset="ml_default"
                         onSuccess={handleUploadSuccess}
-                        onError={(err) => {
-                            console.error("Cloudinary Error Detailed:", err);
-                            alert("Upload failed! Error: " + (err?.statusText || "Check Cloudinary Settings"));
+                        onError={(error, widget) => {
+                            console.error("Cloudinary Widget Error:", error);
+                            console.error("Error details:", JSON.stringify(error, null, 2));
+                            const errorMsg = error?.message || error?.statusText || 
+                                (Object.keys(error || {}).length === 0 
+                                    ? "Upload preset 'ml_default' may not exist or is not set to 'unsigned' in Cloudinary dashboard" 
+                                    : "Unknown error");
+                            alert("Upload failed: " + errorMsg);
+                        }}
+                        options={{
+                            maxFiles: 1,
+                            sources: ['local', 'url', 'camera'],
+                            showAdvancedOptions: false,
+                            cropping: false,
+                            multiple: false,
                         }}
                     >
                         {({ open }) => (
