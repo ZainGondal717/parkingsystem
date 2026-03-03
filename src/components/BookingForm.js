@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Flag from "react-world-flags";
 import StripePaymentForm from "./StripePaymentForm";
+import CameraScanner from "./CameraScanner";
 import { X } from "lucide-react";
 import {
     Search,
@@ -135,7 +136,6 @@ export default function BookingForm({ lots = [] }) {
     const countryDropdownRef = useRef(null);
     const slotDropdownRef = useRef(null);
     const fileInputRef = useRef(null);
-    const [isScanning, setIsScanning] = useState(false);
     const [availableSlots, setAvailableSlots] = useState([]);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
@@ -143,6 +143,7 @@ export default function BookingForm({ lots = [] }) {
     const [slotSearchQuery, setSlotSearchQuery] = useState("");
     const [extensionData, setExtensionData] = useState(null);
     const [timeLeftInSession, setTimeLeftInSession] = useState(null);
+    const [showCameraScanner, setShowCameraScanner] = useState(false);
 
     // CRITICAL: Ensure 'lots' is treated as an array and search is accurate
     const filteredLots = Array.isArray(lots) ? lots.filter(lot =>
@@ -282,55 +283,11 @@ export default function BookingForm({ lots = [] }) {
         setFormData({ ...formData, durationMode: mode, durationValue: value });
     };
 
-    const handleCapture = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setIsScanning(true);
-        try {
-            // Compress the image before sending to prevent timeouts and payload size issues on mobile
-            const compressedBase64 = await compressImage(file);
-
-            const response = await fetch("/api/scan-plate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: compressedBase64 }),
-            });
-
-            if (!response.ok) {
-                // Handle non-200 responses (like "Payload Too Large" or "Server Error")
-                let errorMessage = "Failed to scan image. Please try again.";
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error || errorMessage;
-                } catch (e) {
-                    // Response might not be JSON (e.g. standard server error page)
-                }
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
-            if (data.text) {
-                // Plate Recognizer already gives us a clean plate string.
-                // We'll trust its result but do a quick sanity cleanup.
-                const plateValue = data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-                if (plateValue) {
-                    setFormData(prev => ({ ...prev, carNumber: plateValue.substring(0, 10) }));
-                } else {
-                    throw new Error("Could not detect license plate clearly. Please try again.");
-                }
-            } else {
-                throw new Error("Could not detect any text. Try to get closer to the plate.");
-            }
-        } catch (error) {
-            console.error("Scan Error:", error);
-            alert(error.message || "Error scanning image.");
-        } finally {
-            // ALWAYS reset scanning state to stop the loading spinner
-            setIsScanning(false);
-            // Clear the file input so the same file can be selected again if needed
-            if (fileInputRef.current) fileInputRef.current.value = "";
+    const handlePlateDetected = (plateNumber) => {
+        // Directly set the detected plate number
+        const plateValue = plateNumber.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (plateValue) {
+            setFormData(prev => ({ ...prev, carNumber: plateValue.substring(0, 10) }));
         }
     };
 
@@ -499,30 +456,15 @@ export default function BookingForm({ lots = [] }) {
                                 className={`w-full h-14 pl-12 pr-12 border border-gray-300 rounded-lg outline-none text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal ${extensionData ? 'bg-gray-50 cursor-not-allowed text-gray-400' : 'focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2]'}`}
                             />
 
-                            {/* Hidden file input for camera scan */}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                ref={fileInputRef}
-                                className="hidden"
-                                onChange={handleCapture}
-                            />
-
-                            {/* Scan Button */}
+                            {/* Scan Button - Opens Camera Scanner Modal */}
                             {!extensionData && (
                                 <button
                                     type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isScanning}
+                                    onClick={() => setShowCameraScanner(true)}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md transition-colors border border-gray-200"
                                     title="Scan License Plate"
                                 >
-                                    {isScanning ? (
-                                        <Loader2 className="w-4 h-4 text-[#1877f2] animate-spin" />
-                                    ) : (
-                                        <Camera className="w-4 h-4 text-gray-600 hover:text-[#1877f2]" />
-                                    )}
+                                    <Camera className="w-4 h-4 text-gray-600 hover:text-[#1877f2]" />
                                 </button>
                             )}
                         </div>
@@ -772,6 +714,17 @@ export default function BookingForm({ lots = [] }) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Camera Scanner Modal */}
+            {showCameraScanner && (
+                <CameraScanner 
+                    onPlateDetected={(plateNumber) => {
+                        handlePlateDetected(plateNumber);
+                        setShowCameraScanner(false);
+                    }}
+                    onClose={() => setShowCameraScanner(false)}
+                />
             )}
         </section>
     );
