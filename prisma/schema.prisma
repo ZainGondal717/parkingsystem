@@ -101,11 +101,10 @@ model Booking {
   notificationSent Boolean @default(false)
   
   // Payment Fields
-  paymentStatus     String   @default("pending")  // pending, completed, failed, canceled, refunded
+  paymentStatus     String   @default("pending")  // pending, completed, failed, canceled
   paymentIntentId   String?  // Removed @unique - validation handled in code
   paymentMethod     String?  @default("stripe")
   paidAt            DateTime?
-  refundedAt        DateTime?
   paymentFailureReason String?
   
   createdAt     DateTime @default(now())
@@ -141,7 +140,7 @@ model PaymentTransaction {
   // Transaction Details
   amount            Int      // Amount in cents
   currency          String   @default("usd")
-  status            String   // pending, succeeded, failed, canceled, refunded
+  status            String   // pending, succeeded, failed, canceled, fraud_suspected
   
   // Metadata for fraud verification
   vehicleNumber     String?

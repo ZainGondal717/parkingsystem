@@ -39,10 +39,6 @@ export async function POST(request) {
                 await handlePaymentIntentCanceled(event.data.object);
                 break;
 
-            case "charge.refunded":
-                await handleChargeRefunded(event.data.object);
-                break;
-
             default:
                 console.log(`Unhandled event type ${event.type}`);
         }
@@ -200,35 +196,4 @@ async function handlePaymentIntentCanceled(paymentIntent) {
     }
 }
 
-async function handleChargeRefunded(charge) {
-    try {
-        // 📝 Update transaction log
-        if (charge.payment_intent) {
-            await prisma.paymentTransaction.updateMany({
-                where: { paymentIntentId: charge.payment_intent },
-                data: { status: "refunded" }
-            });
 
-            const booking = await prisma.booking.findFirst({
-                where: { paymentIntentId: charge.payment_intent },
-            });
-
-            if (booking) {
-                await prisma.booking.update({
-                    where: { id: booking.id },
-                    data: {
-                        paymentStatus: "refunded",
-                        refundedAt: new Date(),
-                    },
-                });
-                console.log(
-                    `💰 Charge refunded for booking ${booking.id}`,
-                    charge.id
-                );
-            }
-        }
-    } catch (error) {
-        console.error("Error handling charge.refunded:", error);
-        throw error;
-    }
-}
