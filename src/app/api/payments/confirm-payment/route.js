@@ -24,27 +24,15 @@ export async function POST(request) {
             );
         }
 
-        // Update the booking with payment information
-        // Assuming the booking was already created in admin/bookings route
-        // This route is for confirming payment after successful Stripe payment
-        const updatedBooking = await prisma.booking.update({
-            where: {
-                id: bookingDetails.bookingId,
-            },
-            data: {
-                paymentStatus: "completed",
-                paymentIntentId: paymentIntentId,
-                paymentMethod: "stripe",
-                paidAt: new Date(),
-                totalPrice: bookingDetails.totalPrice,
-            },
-        });
+        // Payment verified successfully
+        // The booking will be created in the handlePaymentSuccess callback on the frontend
+        // This route just verifies that the payment succeeded
 
         return new Response(
             JSON.stringify({
                 success: true,
-                booking: updatedBooking,
-                message: "Payment confirmed successfully",
+                paymentIntentId: paymentIntentId,
+                message: "Payment verified successfully. Booking will be created.",
             }),
             {
                 status: 200,

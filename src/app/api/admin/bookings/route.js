@@ -111,6 +111,10 @@ export async function POST(req) {
                 durationMode: data.durationMode,
                 durationValue: parseFloat(data.durationValue),
                 totalPrice: parseFloat(data.totalPrice),
+                paymentStatus: data.paymentStatus || "pending",
+                paymentIntentId: data.paymentIntentId || null,
+                paymentMethod: data.paymentMethod || "stripe",
+                paidAt: data.paymentStatus === "completed" ? new Date() : null,
             },
             include: {
                 lot: true

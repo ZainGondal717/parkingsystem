@@ -21,14 +21,16 @@ export default function StripePaymentForm({
     // Create payment intent when component mounts or amount changes
     useEffect(() => {
         const createPaymentIntent = async () => {
-            if (!amount || amount <= 0) return;
+            // Ensure amount is always a number
+            const numAmount = Math.max(0, parseFloat(amount) || 0);
+            if (!numAmount || numAmount <= 0) return;
 
             try {
                 const response = await fetch("/api/payments/create-payment-intent", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        amount: Math.round(amount * 100), // Convert to cents
+                        amount: Math.round(numAmount * 100), // Convert to cents
                         bookingDetails,
                     }),
                 });
@@ -154,7 +156,7 @@ export default function StripePaymentForm({
                                     Amount to Pay
                                 </p>
                                 <p className="text-3xl font-black text-blue-900 tracking-tighter">
-                                    ${typeof amount === "number" ? amount.toFixed(2) : "0.00"}
+                                    ${(parseFloat(amount) || 0).toFixed(2)}
                                 </p>
                             </div>
                             <div className="w-14 h-14 bg-white rounded-xl shadow-sm border border-blue-100 flex items-center justify-center">

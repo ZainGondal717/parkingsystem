@@ -338,74 +338,78 @@ export default function BookingForm({ lots = [] }) {
         e.preventDefault();
         if (!selectedLot) { alert("Please select a parking lot."); return; }
         if (!selectedSlot) { alert("Please select a parking slot."); return; }
-        setIsSubmitting(true);
+        
+        const numTotalPrice = parseFloat(totalPrice) || 0;
+        if (numTotalPrice <= 0) { alert("Invalid price calculated."); return; }
+        
+        // Store booking data (DON'T create booking yet - wait for payment)
+        setPendingBookingData({
+            carNumber: formData.carNumber,
+            phoneNumber: formData.phoneNumber,
+            durationMode: formData.durationMode,
+            durationValue: formData.durationValue,
+            countryCode: selectedCountry.code,
+            lotName: selectedLot.name,
+            lotId: selectedLot.id,
+            slotNumber: selectedSlot,
+            duration: `${formData.durationValue} ${formData.durationMode}${formData.durationValue > 1 ? 's' : ''}`,
+            totalPrice: numTotalPrice,
+            bookingId: extensionData?.id, // For extension case
+        });
+        
+        // Show payment modal (booking will be created after payment success)
+        setShowPaymentModal(true);
+    };
+
+    const handlePaymentSuccess = async (paymentIntent) => {
         try {
-            const response = await fetch("/api/admin/bookings", {
+            // Payment successful - NOW create the booking
+            const bookingResponse = await fetch("/api/admin/bookings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ...formData,
-                    lotId: selectedLot.id,
-                    slotNumber: selectedSlot,
-                    totalPrice: totalPrice,
-                    countryCode: selectedCountry.code,
-                    bookingId: extensionData?.id, // Pass this for extension
-                    paymentStatus: "pending" // Add payment status
+                    carNumber: pendingBookingData.carNumber,
+                    phoneNumber: pendingBookingData.phoneNumber,
+                    durationMode: pendingBookingData.durationMode,
+                    durationValue: pendingBookingData.durationValue,
+                    countryCode: pendingBookingData.countryCode,
+                    lotId: pendingBookingData.lotId,
+                    slotNumber: pendingBookingData.slotNumber,
+                    totalPrice: pendingBookingData.totalPrice,
+                    bookingId: pendingBookingData.bookingId, // For extension
+                    paymentIntentId: paymentIntent.id,
+                    paymentStatus: "completed",
                 }),
             });
-            if (response.ok) {
-                const booking = await response.json();
-                
-                // Store booking data and show payment modal
-                setPendingBookingData({
-                    bookingId: booking.id,
-                    carNumber: formData.carNumber,
-                    phoneNumber: formData.phoneNumber,
-                    lotName: selectedLot.name,
-                    lotId: selectedLot.id,
-                    slotNumber: selectedSlot,
-                    duration: `${formData.durationValue} ${formData.durationMode}${formData.durationValue > 1 ? 's' : ''}`,
-                    totalPrice: totalPrice,
-                });
-                
-                // Show payment modal instead of alert
-                setShowPaymentModal(true);
-            } else { 
-                alert("Failed to create booking. Make sure you selected a slot."); 
-            }
-        } catch (err) { 
-            alert("Error connecting to server."); 
-        }
-        finally { 
-            setIsSubmitting(false); 
-        }
-    };
 
-    const handlePaymentSuccess = (paymentIntent) => {
-        // Payment successful - show confirmation
-        alert(`🎉 Booking Complete!\n\n📍 Location: ${selectedLot.name}\n🚙 Plate: ${formData.carNumber}\n🔢 Slot: ${selectedSlot}\n💰 Paid: $${totalPrice}`);
-        
-        // Clear form
-        setFormData({ carNumber: "", phoneNumber: "", durationMode: "hourly", durationValue: 1 });
-        setSelectedSlot(null);
-        setShowPaymentModal(false);
-        setPendingBookingData(null);
+            if (bookingResponse.ok) {
+                const booking = await bookingResponse.json();
+                alert(`🎉 Booking Complete!\n\n📍 Location: ${pendingBookingData.lotName}\n🚙 Plate: ${pendingBookingData.carNumber}\n🔢 Slot: ${pendingBookingData.slotNumber}\n💰 Paid: $${pendingBookingData.totalPrice.toFixed(2)}`);
+                
+                // Clear form
+                setFormData({ carNumber: "", phoneNumber: "", durationMode: "hourly", durationValue: 1 });
+                setSelectedSlot(null);
+                setShowPaymentModal(false);
+                setPendingBookingData(null);
 
-        // Refresh slots
-        const refreshSlots = async () => {
-            try {
-                setIsLoadingSlots(true);
-                const res = await fetch(`/api/slots?lotId=${selectedLot.id}`);
-                const data = await res.json();
-                if (data.slots) setAvailableSlots(data.slots);
-            } catch (err) {
-                console.error("Refresh failed", err);
-            } finally {
-                setIsLoadingSlots(false);
+                // Refresh slots
+                try {
+                    setIsLoadingSlots(true);
+                    const res = await fetch(`/api/slots?lotId=${pendingBookingData.lotId}`);
+                    const data = await res.json();
+                    if (data.slots) setAvailableSlots(data.slots);
+                } catch (err) {
+                    console.error("Refresh failed", err);
+                } finally {
+                    setIsLoadingSlots(false);
+                }
+            } else {
+                throw new Error("Failed to create booking after payment");
             }
-        };
-        
-        refreshSlots();
+        } catch (err) {
+            console.error("Booking creation after payment failed:", err);
+            alert(`Booking creation failed: ${err.message}. Please contact support.`);
+        }
     };
 
     const handlePaymentError = (errorMessage) => {
