@@ -27,9 +27,6 @@ export async function POST(req) {
                 dailyRate: parseFloat(data.dailyRate) || 0,
                 weeklyRate: parseFloat(data.weeklyRate) || 0,
                 monthlyRate: parseFloat(data.monthlyRate) || 0,
-                masterLeasePrice: parseFloat(data.masterLeasePrice) || 0,
-                thumbnailImage: data.thumbnailImage || null,
-                otherImages: data.otherImages || [],
             },
         });
         return NextResponse.json(newLot);
@@ -55,9 +52,6 @@ export async function PUT(req) {
                 dailyRate: parseFloat(data.dailyRate) || 0,
                 weeklyRate: parseFloat(data.weeklyRate) || 0,
                 monthlyRate: parseFloat(data.monthlyRate) || 0,
-                masterLeasePrice: parseFloat(data.masterLeasePrice) || 0,
-                thumbnailImage: data.thumbnailImage || null,
-                otherImages: data.otherImages || [],
             },
         });
         return NextResponse.json(updatedLot);
