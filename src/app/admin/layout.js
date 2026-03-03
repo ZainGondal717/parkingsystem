@@ -1,5 +1,5 @@
 "use client";
-import { LayoutDashboard, Users, UserCircle, Settings, LogOut, Image as ImageIcon, MapPin, Menu, X, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, UserCircle, Settings, LogOut, Image as ImageIcon, MapPin, Menu, X, Building2, QrCode } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -41,6 +41,7 @@ export default function AdminLayout({ children }) {
     { label: "Parking Lots", href: "/admin/lots", icon: MapPin },
     { label: "Landlords", href: "/admin/landlords", icon: Building2 },
     { label: "Slots Monitoring", href: "/admin/slots", icon: LayoutDashboard },
+    { label: "QR Code Generator", href: "/admin/qr-codes", icon: QrCode },
     { label: "Book Page Banner", href: "/admin/lot-a-slider", icon: ImageIcon }
   ];
 

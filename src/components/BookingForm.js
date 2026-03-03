@@ -113,6 +113,7 @@ export default function BookingForm({ lots = [] }) {
     const [isLotDropdownOpen, setIsLotDropdownOpen] = useState(false);
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
     const [lotSearchQuery, setLotSearchQuery] = useState("");
+    const [isLotLocked, setIsLotLocked] = useState(false); // Track if lot was pre-selected via URL
 
     // Default country
     const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
@@ -165,11 +166,23 @@ export default function BookingForm({ lots = [] }) {
         setTotalPrice(price.toFixed(2));
     }, [selectedLot, formData.durationMode, formData.durationValue]);
 
-    // Handle Extension logic
+    // Handle Extension logic and QR code pre-selection
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const bookingId = params.get('extend');
+        const lotId = params.get('lot');
 
+        // Handle QR code pre-selection (lock the lot)
+        if (lotId && Array.isArray(lots) && lots.length > 0) {
+            const preSelectedLot = lots.find(l => l.id === lotId);
+            if (preSelectedLot) {
+                setSelectedLot(preSelectedLot);
+                setIsLotLocked(true); // Lock the lot dropdown
+                setIsLotDropdownOpen(false);
+            }
+        }
+
+        // Handle booking extension
         if (bookingId) {
             const fetchExtensionBooking = async () => {
                 try {
@@ -396,12 +409,20 @@ export default function BookingForm({ lots = [] }) {
                             </div>
                         </div>
                     )}
+                    {isLotLocked && (
+                        <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl animate-in slide-in-from-top duration-500">
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5 text-green-600" />
+                                <p className="text-sm font-bold text-green-700">Location: <span className="font-black">{selectedLot?.name}</span></p>
+                            </div>
+                        </div>
+                    )}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Parking Lot Dropdown */}
                         <div className="relative" ref={lotDropdownRef}>
                             <div
-                                onClick={() => !extensionData && setIsLotDropdownOpen(!isLotDropdownOpen)}
-                                className={`w-full h-14 px-4 border border-gray-300 rounded-lg flex items-center justify-between transition-all ${extensionData ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'cursor-pointer hover:bg-gray-50 focus:border-[#1877f2]'}`}
+                                onClick={() => !extensionData && !isLotLocked && setIsLotDropdownOpen(!isLotDropdownOpen)}
+                                className={`w-full h-14 px-4 border border-gray-300 rounded-lg flex items-center justify-between transition-all ${extensionData || isLotLocked ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'cursor-pointer hover:bg-gray-50 focus:border-[#1877f2]'}`}
                             >
                                 <div className="flex items-center gap-3">
                                     <MapPin className="w-5 h-5 text-gray-400" />
@@ -412,7 +433,7 @@ export default function BookingForm({ lots = [] }) {
                                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isLotDropdownOpen ? 'rotate-180' : ''}`} />
                             </div>
 
-                            {isLotDropdownOpen && (
+                            {isLotDropdownOpen && !isLotLocked && (
                                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-2xl z-50 overflow-hidden">
                                     <div className="p-3 bg-gray-50 border-b border-gray-200">
                                         <div className="relative">
