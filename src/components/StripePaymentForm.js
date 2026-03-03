@@ -33,14 +33,17 @@ export default function StripePaymentForm({
                     }),
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    throw new Error("Failed to create payment intent");
+                    throw new Error(data.error || `Failed to create payment intent (${response.status})`);
                 }
 
-                const data = await response.json();
                 setClientSecret(data.clientSecret);
+                setError(null);
             } catch (err) {
-                setError(err.message);
+                console.error("Payment Intent Creation Error:", err);
+                setError(err.message || "Failed to create payment intent");
             }
         };
 
@@ -206,6 +209,21 @@ export default function StripePaymentForm({
                         </span>
                     </div>
 
+                    {/* Loading State */}
+                    {!clientSecret && !error && (
+                        <div className="animate-in slide-in-from-top duration-300 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <Loader2 className="w-5 h-5 text-blue-600 animate-spin flex-shrink-0" />
+                            <div>
+                                <p className="text-sm font-bold text-blue-900">
+                                    Preparing Payment
+                                </p>
+                                <p className="text-xs text-blue-700 mt-1">
+                                    Initializing secure payment system...
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Error Message */}
                     {error && (
                         <div className="animate-in slide-in-from-top duration-300 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
@@ -216,6 +234,9 @@ export default function StripePaymentForm({
                                 </p>
                                 <p className="text-xs text-red-700 mt-1">
                                     {error}
+                                </p>
+                                <p className="text-xs text-red-600 mt-2">
+                                    💡 Tip: Check your amount and try again, or contact support if the problem persists.
                                 </p>
                             </div>
                         </div>
