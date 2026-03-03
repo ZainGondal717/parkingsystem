@@ -422,7 +422,7 @@ export default function BookingForm({ lots = [] }) {
                                                 placeholder="Search by lot or address..."
                                                 value={lotSearchQuery}
                                                 onChange={(e) => setLotSearchQuery(e.target.value)}
-                                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1877f2]"
+                                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-[#1877f2] text-gray-900"
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
@@ -453,7 +453,7 @@ export default function BookingForm({ lots = [] }) {
                                 placeholder="Car Plate Number"
                                 value={formData.carNumber}
                                 onChange={(e) => setFormData({ ...formData, carNumber: e.target.value.toUpperCase() })}
-                                className={`w-full h-14 pl-12 pr-12 border border-gray-300 rounded-lg outline-none text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal ${extensionData ? 'bg-gray-50 cursor-not-allowed text-gray-400' : 'focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2]'}`}
+                                className={`w-full h-14 pl-12 pr-12 border border-gray-300 rounded-lg outline-none text-sm font-bold tracking-widest uppercase placeholder:normal-case placeholder:font-normal text-gray-900 ${extensionData ? 'bg-gray-50 cursor-not-allowed text-gray-400' : 'focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2]'}`}
                             />
 
                             {/* Scan Button - Opens Camera Scanner Modal */}
@@ -513,7 +513,7 @@ export default function BookingForm({ lots = [] }) {
                                     placeholder="Phone Number"
                                     value={formData.phoneNumber}
                                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                                    className="w-full h-14 pl-12 pr-4 border border-gray-300 rounded-lg outline-none focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2] text-sm font-bold"
+                                    className="w-full h-14 pl-12 pr-4 border border-gray-300 rounded-lg outline-none focus:border-[#1877f2] focus:ring-1 focus:ring-[#1877f2] text-sm font-bold text-gray-900"
                                 />
                             </div>
                         </div>
@@ -561,7 +561,7 @@ export default function BookingForm({ lots = [] }) {
                                                     placeholder="Find slot number..."
                                                     value={slotSearchQuery}
                                                     onChange={(e) => setSlotSearchQuery(e.target.value)}
-                                                    className="w-full h-10 pl-9 pr-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1877f2] font-bold"
+                                                    className="w-full h-10 pl-9 pr-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1877f2] font-bold text-gray-900"
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             </div>
